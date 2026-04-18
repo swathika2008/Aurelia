@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>Login — Aurelia Jewels</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --gold:        #d4af37;
+      --gold-light:  #f7e7a9;
+      --gold-dim:    #7a621a;
+      --gold-glow:   rgba(212,175,55,0.15);
+      --black:       #070707;
+      --dark1:       #0d0d0d;
+      --dark2:       #141414;
+      --dark3:       #1c1c1c;
+      --dark4:       #252525;
+      --border:      rgba(212,175,55,0.22);
+      --border-hi:   rgba(212,175,55,0.55);
+      --text:        #f0e8d0;
+      --muted:       #7a7060;
+      --muted-hi:    #a89878;
+      --error:       #e05252;
+      --error-bg:    rgba(224,82,82,0.08);
+      --success:     #4caf82;
+      --success-bg:  rgba(76,175,130,0.08);
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      background: var(--black);
+      font-family: 'Inter', sans-serif;
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* background light pools */
+    .bg-lights {
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    }
+    .bg-lights::before {
+      content: '';
+      position: absolute; top: -20%; right: -10%;
+      width: 700px; height: 700px;
+      background: radial-gradient(circle, rgba(212,175,55,0.08) 0%, transparent 65%);
+      animation: driftA 18s ease-in-out infinite alternate;
+    }
+    .bg-lights::after {
+      content: '';
+      position: absolute; bottom: -15%; left: -10%;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(212,175,55,0.05) 0%, transparent 65%);
+      animation: driftB 14s ease-in-out infinite alternate;
+    }
+    @keyframes driftA { from{transform:translate(0,0)} to{transform:translate(-40px,40px)} }
+    @keyframes driftB { from{transform:translate(0,0)} to{transform:translate(50px,-30px)} }
+
+    /* corner ornaments */
+    .orn { position: fixed; width: 90px; height: 90px; pointer-events: none; z-index: 1; }
+    .orn-tl { top: 18px; left: 18px; }
+    .orn-tr { top: 18px; right: 18px; transform: scaleX(-1); }
+    .orn-bl { bottom: 18px; left: 18px; transform: scaleY(-1); }
+    .orn-br { bottom: 18px; right: 18px; transform: scale(-1,-1); }
+
+    /* NAVBAR */
+    .navbar {
+      position: fixed; top: 0; left: 0; width: 100%;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 36px;
+      background: rgba(7,7,7,0.92);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      z-index: 1000;
+    }
+    .logo { display: flex; flex-direction: column; line-height: 1; }
+    .logo-main {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px; font-weight: 700; letter-spacing: 3px;
+      background: linear-gradient(90deg, #d4af37, #f7e7a9, #d4af37);
+      background-size: 200%;
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      animation: shimmer 4s linear infinite;
+    }
+    .logo-sub { font-size: 9px; letter-spacing: 5px; color: var(--gold-dim); text-transform: uppercase; margin-top: 2px; }
+    @keyframes shimmer { 0%{background-position:-100%} 100%{background-position:200%} }
+    .nav-links { display: flex; list-style: none; gap: 28px; }
+    .nav-links a {
+      text-decoration: none; color: rgba(240,232,208,0.7);
+      font-size: 13px; letter-spacing: 0.5px;
+      position: relative; transition: color 0.3s;
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; left: 0; bottom: -4px;
+      width: 0; height: 1px; background: var(--gold); transition: width 0.3s;
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .nav-links a:hover::after, .nav-links a.active::after { width: 100%; }
+    .nav-links a.active { color: var(--gold); }
+
+    /* PAGE LAYOUT */
+    .page {
+      flex: 1; display: grid; grid-template-columns: 1fr 1fr;
+      min-height: 100vh; padding-top: 60px; position: relative; z-index: 2;
+    }
+
+    /* LEFT BRAND PANEL */
+    .left-panel {
+      display: flex; flex-direction: column;
+      justify-content: center; padding: 80px 70px;
+      background: linear-gradient(140deg, #0d0d0d 0%, #111008 100%);
+      border-right: 1px solid var(--border);
+      position: relative; overflow: hidden;
+    }
+    .left-panel::before {
+      content: ''; position: absolute; bottom: 0; right: 0;
+      width: 360px; height: 360px;
+      background: radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 65%);
+      pointer-events: none;
+    }
+    .left-eyebrow {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 12px; letter-spacing: 7px; color: var(--gold);
+      text-transform: uppercase; margin-bottom: 28px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .left-eyebrow::before { content: ''; display: block; width: 36px; height: 1px; background: var(--gold); flex-shrink: 0; }
+    .left-headline {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(36px, 3.5vw, 52px);
+      font-weight: 400; line-height: 1.2;
+      color: var(--text); margin-bottom: 26px;
+    }
+    .left-headline em {
+      font-style: italic;
+      background: linear-gradient(90deg, #d4af37, #f7e7a9);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .left-desc {
+      font-size: 14px; line-height: 1.9; color: var(--muted-hi);
+      max-width: 340px; margin-bottom: 44px;
+    }
+    .feature-chips { display: flex; gap: 12px; flex-wrap: wrap; }
+    .chip {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(212,175,55,0.05); border: 1px solid var(--border);
+      border-radius: 50px; padding: 9px 16px;
+      font-size: 11px; letter-spacing: 1px; color: var(--muted-hi);
+      transition: all 0.3s;
+    }
+    .chip:hover { border-color: var(--gold); background: rgba(212,175,55,0.1); color: var(--gold); }
+    .chip .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--gold); }
+    .ring-deco {
+      position: absolute; bottom: 50px; right: -40px;
+      opacity: 0.09; animation: spin 55s linear infinite;
+    }
+    @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+
+    /* RIGHT FORM PANEL */
+    .right-panel {
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 60px 70px; background: var(--dark1);
+    }
+    .form-box {
+      width: 100%; max-width: 420px;
+      animation: riseIn 0.8s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes riseIn { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+    /* crown icon */
+    .crown-wrap { display: flex; justify-content: center; margin-bottom: 30px; }
+    .crown-circle {
+      width: 68px; height: 68px; border-radius: 50%;
+      background: var(--dark3); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .crown-circle::before {
+      content: ''; position: absolute; inset: -7px;
+      border-radius: 50%; border: 1px solid rgba(212,175,55,0.12);
+    }
+    .crown-circle::after {
+      content: ''; position: absolute; inset: -14px;
+      border-radius: 50%; border: 1px solid rgba(212,175,55,0.06);
+    }
+
+    .form-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: 30px; font-weight: 600;
+      text-align: center; color: var(--text); margin-bottom: 6px;
+    }
+    .form-sub { text-align: center; font-size: 13px; color: var(--muted); margin-bottom: 32px; }
+
+    .gold-sep {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 28px;
+    }
+    .gold-sep span { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); }
+    .gold-sep .gem { width: 6px; height: 6px; background: var(--gold); transform: rotate(45deg); opacity: 0.6; }
+
+    /* FIELDS */
+    .field { margin-bottom: 6px; }
+    .field label {
+      display: block; font-size: 10px; letter-spacing: 3px;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 8px;
+    }
+    .input-wrap { position: relative; }
+    .input-icon {
+      position: absolute; left: 16px; top: 50%;
+      transform: translateY(-50%); color: var(--muted);
+      pointer-events: none; transition: color 0.3s;
+    }
+    .input-wrap:focus-within .input-icon { color: var(--gold); }
+    .input-wrap input {
+      width: 100%; background: var(--dark3);
+      border: 1.5px solid rgba(212,175,55,0.15);
+      border-radius: 14px; padding: 14px 18px 14px 46px;
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: 14px;
+      outline: none; transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+    }
+    .input-wrap input::placeholder { color: rgba(240,232,208,0.2); }
+    .input-wrap input:focus {
+      border-color: var(--gold);
+      background: rgba(212,175,55,0.04);
+      box-shadow: 0 0 0 4px rgba(212,175,55,0.08);
+    }
+    .input-wrap input.input-error {
+      border-color: var(--error) !important;
+      background: var(--error-bg) !important;
+      box-shadow: 0 0 0 4px rgba(224,82,82,0.08) !important;
+    }
+    .input-wrap input.input-ok {
+      border-color: var(--success) !important;
+      background: var(--success-bg) !important;
+    }
+    .input-status {
+      position: absolute; right: 14px; top: 50%;
+      transform: translateY(-50%); font-size: 16px;
+      pointer-events: none; opacity: 0; transition: opacity 0.3s;
+    }
+    .input-status.show { opacity: 1; }
+    .eye-btn {
+      position: absolute; right: 14px; top: 50%;
+      transform: translateY(-50%);
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; padding: 4px; transition: color 0.3s;
+    }
+    .eye-btn:hover { color: var(--gold); }
+
+    /* field error message */
+    .field-msg {
+      font-size: 11px; letter-spacing: 0.3px;
+      margin-top: 6px; padding-left: 4px;
+      min-height: 16px; transition: opacity 0.3s;
+      opacity: 0;
+    }
+    .field-msg.show { opacity: 1; }
+    .field-msg.err { color: var(--error); }
+    .field-msg.ok  { color: var(--success); }
+
+    .field-group { margin-bottom: 18px; }
+
+    /* password strength */
+    .strength-bar {
+      display: flex; gap: 4px; margin-top: 8px; height: 3px;
+    }
+    .strength-bar span {
+      flex: 1; border-radius: 2px;
+      background: rgba(255,255,255,0.08);
+      transition: background 0.4s;
+    }
+    .strength-label {
+      font-size: 10px; letter-spacing: 1px; margin-top: 5px;
+      color: var(--muted); transition: color 0.3s;
+    }
+
+    /* options row */
+    .options-row {
+      display: flex; align-items: center;
+      justify-content: space-between; margin-bottom: 26px;
+    }
+    .remember {
+      display: flex; align-items: center; gap: 8px;
+      cursor: pointer; font-size: 13px; color: var(--muted-hi); user-select: none;
+    }
+    .remember input[type=checkbox] {
+      appearance: none; width: 17px; height: 17px;
+      border: 1px solid rgba(212,175,55,0.3); border-radius: 5px;
+      background: var(--dark3); cursor: pointer; position: relative; transition: all 0.2s;
+    }
+    .remember input[type=checkbox]:checked { background: var(--gold); border-color: var(--gold); }
+    .remember input[type=checkbox]:checked::after {
+      content: ''; position: absolute; left: 4px; top: 1px;
+      width: 5px; height: 9px;
+      border-right: 2px solid #000; border-bottom: 2px solid #000;
+      transform: rotate(45deg);
+    }
+    .forgot { font-size: 12px; color: var(--gold-dim); text-decoration: none; transition: color 0.3s; }
+    .forgot:hover { color: var(--gold); }
+
+    /* SUBMIT BUTTON */
+    .submit-btn {
+      width: 100%; padding: 16px;
+      border: none; border-radius: 50px;
+      background: linear-gradient(110deg, #b8922a 0%, #d4af37 35%, #f7e7a9 65%, #d4af37 100%);
+      background-size: 250%; background-position: 0%;
+      color: #1a0f00;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 17px; font-weight: 600;
+      letter-spacing: 3px; text-transform: uppercase;
+      cursor: pointer; position: relative; overflow: hidden;
+      transition: background-position 0.6s, transform 0.2s, box-shadow 0.3s, opacity 0.3s;
+    }
+    .submit-btn::before {
+      content: ''; position: absolute;
+      top: 0; left: -100%; width: 60%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+      transition: left 0.7s ease;
+    }
+    .submit-btn:hover:not(:disabled) {
+      background-position: 100%;
+      box-shadow: 0 6px 40px rgba(212,175,55,0.42), 0 0 0 1px rgba(212,175,55,0.28);
+      transform: translateY(-2px);
+    }
+    .submit-btn:hover::before { left: 150%; }
+    .submit-btn:active:not(:disabled) { transform: translateY(0); }
+    .submit-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .submit-btn.loading { pointer-events: none; }
+    .submit-btn .btn-text { transition: opacity 0.2s; }
+    .submit-btn .btn-spinner { display: none; }
+    .submit-btn.loading .btn-text { opacity: 0; }
+    .submit-btn.loading .btn-spinner { display: inline-block; }
+
+    /* spinner */
+    @keyframes spin-small { to { transform: rotate(360deg); } }
+    .spinner {
+      display: inline-block; width: 18px; height: 18px;
+      border: 2px solid rgba(26,15,0,0.3);
+      border-top-color: #1a0f00;
+      border-radius: 50%;
+      animation: spin-small 0.7s linear infinite;
+      vertical-align: middle;
+    }
+
+    /* divider */
+    .sep { display: flex; align-items: center; gap: 14px; margin: 22px 0; }
+    .sep span { flex: 1; height: 1px; background: rgba(212,175,55,0.1); }
+    .sep em { font-style: normal; font-size: 11px; letter-spacing: 2px; color: var(--muted); }
+
+    /* guest button */
+    .guest-btn {
+      width: 100%; padding: 14px;
+      border: 1px solid rgba(212,175,55,0.2); border-radius: 50px;
+      background: transparent; color: var(--muted-hi);
+      font-family: 'Inter', sans-serif; font-size: 12px;
+      letter-spacing: 2px; cursor: pointer; transition: all 0.3s; text-transform: uppercase;
+    }
+    .guest-btn:hover { background: rgba(212,175,55,0.07); border-color: var(--gold); color: var(--gold); }
+
+    /* links */
+    .bottom-links { text-align: center; margin-top: 24px; font-size: 13px; color: var(--muted); }
+    .bottom-links a { color: var(--gold); text-decoration: none; font-weight: 500; transition: opacity 0.2s; }
+    .bottom-links a:hover { opacity: 0.7; }
+
+    /* trust badges */
+    .trust-row {
+      display: flex; justify-content: center; gap: 22px;
+      margin-top: 26px; padding-top: 22px;
+      border-top: 1px solid rgba(212,175,55,0.08);
+    }
+    .trust-badge { display: flex; align-items: center; gap: 6px; font-size: 10px; color: var(--muted); }
+
+    /* form success overlay */
+    .form-success {
+      position: absolute; inset: 0;
+      background: var(--dark1);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px; opacity: 0; pointer-events: none;
+      transition: opacity 0.5s; border-radius: 28px;
+      text-align: center; padding: 40px;
+    }
+    .form-success.show { opacity: 1; pointer-events: all; }
+    .form-success .success-icon {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: var(--success-bg); border: 1px solid var(--success);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 30px; animation: popIn 0.5s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes popIn { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+    .form-success h3 {
+      font-family: 'Playfair Display', serif; font-size: 24px;
+      background: linear-gradient(90deg,#d4af37,#f7e7a9);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .form-success p { font-size: 14px; color: var(--muted-hi); }
+
+    /* form wrapper needs relative for success overlay */
+    .form-wrapper { position: relative; }
+
+    /* toast */
+    .toast {
+      position: fixed; bottom: 32px; left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--dark4); border: 1px solid var(--border-hi);
+      color: var(--gold); padding: 12px 30px; border-radius: 50px;
+      font-size: 13px; letter-spacing: 1px; opacity: 0;
+      pointer-events: none; transition: opacity 0.4s, transform 0.4s;
+      z-index: 9999; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* tab switcher (login / register) */
+    .tab-bar {
+      display: flex; margin-bottom: 30px;
+      background: var(--dark3); border-radius: 50px;
+      padding: 4px; gap: 4px;
+    }
+    .tab-btn {
+      flex: 1; padding: 10px;
+      border: none; border-radius: 50px;
+      background: transparent; color: var(--muted-hi);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 15px; font-weight: 500; letter-spacing: 1px;
+      cursor: pointer; transition: all 0.3s;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #d4af37, #f7e7a9);
+      color: #1a0f00; font-weight: 600;
+    }
+
+    /* panels for login / register */
+    .form-panel { display: none; }
+    .form-panel.active { display: block; }
+
+    @media (max-width: 860px) {
+      .page { grid-template-columns: 1fr; }
+      .left-panel { display: none; }
+      .right-panel { padding: 80px 28px 40px; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="bg-lights"></div>
+
+<!-- corner ornaments -->
+<svg class="orn orn-tl" viewBox="0 0 90 90" fill="none">
+  <path d="M0 72 L0 0 L72 0" stroke="#d4af37" stroke-width="0.8" opacity="0.4"/>
+  <path d="M0 45 L0 0 L45 0" stroke="#d4af37" stroke-width="0.4" opacity="0.2"/>
+  <circle cx="0" cy="0" r="4" fill="#d4af37" opacity="0.5"/>
+</svg>
+<svg class="orn orn-tr" viewBox="0 0 90 90" fill="none">
+  <path d="M0 72 L0 0 L72 0" stroke="#d4af37" stroke-width="0.8" opacity="0.4"/>
+  <circle cx="0" cy="0" r="4" fill="#d4af37" opacity="0.5"/>
+</svg>
+<svg class="orn orn-bl" viewBox="0 0 90 90" fill="none">
+  <path d="M0 72 L0 0 L72 0" stroke="#d4af37" stroke-width="0.8" opacity="0.4"/>
+  <circle cx="0" cy="0" r="4" fill="#d4af37" opacity="0.5"/>
+</svg>
+<svg class="orn orn-br" viewBox="0 0 90 90" fill="none">
+  <path d="M0 72 L0 0 L72 0" stroke="#d4af37" stroke-width="0.8" opacity="0.4"/>
+  <circle cx="0" cy="0" r="4" fill="#d4af37" opacity="0.5"/>
+</svg>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="logo">
+    <span class="logo-main">Aurelia</span>
+    <span class="logo-sub">Jewels</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="accessory.html">Home</a></li>
+    <li><a href="collections.html">Collections</a></li>
+    <li><a href="#">Gifting</a></li>
+    <li><a href="#">About Us</a></li>
+    <li><a href="login.html" class="active">Login</a></li>
+  </ul>
+</nav>
+
+<!-- TWO-COLUMN PAGE -->
+<div class="page">
+
+  <!-- LEFT BRAND PANEL -->
+  <div class="left-panel">
+    <div class="left-eyebrow">Member Access</div>
+    <h1 class="left-headline">Adorned in<br><em>Gold.</em><br>Crafted for You.</h1>
+    <p class="left-desc">
+      Sign in or create an account to access your exclusive wishlist, order history,
+      and members-only collections — crafted for those who appreciate the finest.
+    </p>
+    <div class="feature-chips">
+      <div class="chip"><span class="dot"></span>Exclusive Access</div>
+      <div class="chip"><span class="dot"></span>Secure Checkout</div>
+      <div class="chip"><span class="dot"></span>Wishlist</div>
+    </div>
+
+    <svg class="ring-deco" width="300" height="300" viewBox="0 0 300 300" fill="none">
+      <circle cx="150" cy="150" r="130" stroke="#d4af37" stroke-width="1.5"/>
+      <circle cx="150" cy="150" r="110" stroke="#d4af37" stroke-width="0.5"/>
+      <circle cx="150" cy="150" r="145" stroke="#d4af37" stroke-width="0.3" stroke-dasharray="4 10"/>
+      <circle cx="150" cy="150" r="88" stroke="#d4af37" stroke-width="0.5"/>
+      <polygon points="150,22 160,44 184,44 165,58 173,80 150,66 127,80 135,58 116,44 140,44" fill="#d4af37" opacity="0.85"/>
+      <line x1="150" y1="20" x2="150" y2="0" stroke="#d4af37" stroke-width="0.5" opacity="0.4"/>
+      <line x1="280" y1="150" x2="300" y2="150" stroke="#d4af37" stroke-width="0.5" opacity="0.4"/>
+      <line x1="20" y1="150" x2="0" y2="150" stroke="#d4af37" stroke-width="0.5" opacity="0.4"/>
+      <line x1="150" y1="280" x2="150" y2="300" stroke="#d4af37" stroke-width="0.5" opacity="0.4"/>
+    </svg>
+  </div>
+
+  <!-- RIGHT FORM PANEL -->
+  <div class="right-panel">
+    <div class="form-box">
+
+      <!-- crown -->
+      <div class="crown-wrap">
+        <div class="crown-circle">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M2 19h20M3 19L5 10l4.5 4L12 5l2.5 9L19 10l2 9" stroke="#d4af37" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="5" cy="10" r="1.5" fill="#d4af37"/>
+            <circle cx="19" cy="10" r="1.5" fill="#d4af37"/>
+            <circle cx="12" cy="5" r="1.5" fill="#d4af37"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- TAB SWITCHER -->
+      <div class="tab-bar">
+        <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Sign In</button>
+        <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">Create Account</button>
+      </div>
+
+      <!-- ════ LOGIN PANEL ════ -->
+      <div class="form-panel active" id="panelLogin">
+        <div class="form-wrapper">
+          <div class="gold-sep"><span></span><div class="gem"></div><span></span></div>
+
+          <!-- Email -->
+          <div class="field-group">
+            <div class="field">
+              <label for="loginEmail">Email Address</label>
+              <div class="input-wrap">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                <input type="email" id="loginEmail" placeholder="you@example.com"
+                       oninput="validateLoginEmail()" onblur="validateLoginEmail()">
+                <span class="input-status" id="loginEmailStatus"></span>
+              </div>
+              <div class="field-msg" id="loginEmailMsg"></div>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="field-group">
+            <div class="field">
+              <label for="loginPassword">Password</label>
+              <div class="input-wrap">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input type="password" id="loginPassword" placeholder="Your password"
+                       oninput="validateLoginPassword()" onblur="validateLoginPassword()">
+                <button class="eye-btn" type="button" onclick="toggleEye('loginPassword','loginEye')">
+                  <svg id="loginEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="field-msg" id="loginPasswordMsg"></div>
+            </div>
+          </div>
+
+          <div class="options-row">
+            <label class="remember">
+              <input type="checkbox" id="rememberMe"> Remember me
+            </label>
+            <a href="#" class="forgot">Forgot password?</a>
+          </div>
+
+          <button class="submit-btn" id="loginSubmitBtn" onclick="submitLogin()">
+            <span class="btn-text">Sign In</span>
+            <span class="btn-spinner"><span class="spinner"></span></span>
+          </button>
+
+          <div class="sep"><span></span><em>or</em><span></span></div>
+          <button class="guest-btn" onclick="window.location.href='accessory.html'">Continue as Guest</button>
+
+          <!-- success overlay -->
+          <div class="form-success" id="loginSuccess">
+            <div class="success-icon">✓</div>
+            <h3>Welcome Back!</h3>
+            <p>Redirecting you to your jewels...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ REGISTER PANEL ════ -->
+      <div class="form-panel" id="panelRegister">
+        <div class="form-wrapper">
+          <div class="gold-sep"><span></span><div class="gem"></div><span></span></div>
+
+          <!-- Full Name -->
+          <div class="field-group">
+            <div class="field">
+              <label for="regName">Full Name</label>
+              <div class="input-wrap">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+                </svg>
+                <input type="text" id="regName" placeholder="Your full name"
+                       oninput="validateRegName()" onblur="validateRegName()">
+                <span class="input-status" id="regNameStatus"></span>
+              </div>
+              <div class="field-msg" id="regNameMsg"></div>
+            </div>
+          </div>
+
+          <!-- Email -->
+          <div class="field-group">
+            <div class="field">
+              <label for="regEmail">Email Address</label>
+              <div class="input-wrap">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                <input type="email" id="regEmail" placeholder="you@example.com"
+                       oninput="validateRegEmail()" onblur="validateRegEmail()">
+                <span class="input-status" id="regEmailStatus"></span>
+              </div>
+              <div class="field-msg" id="regEmailMsg"></div>
+            </div>
+          </div>
+
+          <!-- Phone -->
+          <div class="field-group">
+            <div class="field">
+              <label for="regPhone">Phone Number</label>
+              <div class="input-wrap">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.44 2 2 0 0 1 3.59 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.56a16 16 0 0 0 5.66 5.66l.92-.92a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                <input type="tel" id="regPhone" placeholder="+91 98765 43210"
+                       oninput="validateRegPhone()" onblur="validateRegPhone()">
+                <span class="input-status" id="regPhoneStatus"></span>
+              </div>
+              <div class="field-msg" id="regPhoneMsg"></div>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="field-group">
+            <div class="field">
+              <label for="regPassword">Password</label>
+              <div class="input-wrap">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input type="password" id="regPassword" placeholder="Create a strong password"
+                       oninput="validateRegPassword()" onblur="validateRegPassword()">
+                <button class="eye-btn" type="button" onclick="toggleEye('regPassword','regEye')">
+                  <svg id="regEye" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="strength-bar" id="strengthBar">
+                <span id="sb1"></span><span id="sb2"></span>
+                <span id="sb3"></span><span id="sb4"></span>
+              </div>
+              <div class="strength-label" id="strengthLabel"></div>
+              <div class="field-msg" id="regPasswordMsg"></div>
+            </div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="field-group">
+            <div class="field">
+              <label for="regConfirm">Confirm Password</label>
+              <div class="input-wrap">
+                <svg class="input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+                <input type="password" id="regConfirm" placeholder="Repeat your password"
+                       oninput="validateRegConfirm()" onblur="validateRegConfirm()">
+                <span class="input-status" id="regConfirmStatus"></span>
+              </div>
+              <div class="field-msg" id="regConfirmMsg"></div>
+            </div>
+          </div>
+
+          <!-- Terms -->
+          <div class="field-group" style="margin-bottom:24px">
+            <label class="remember" style="align-items:flex-start;gap:10px">
+              <input type="checkbox" id="regTerms" onchange="validateTerms()" style="margin-top:2px;flex-shrink:0">
+              <span style="font-size:12px;line-height:1.6">
+                I agree to the <a href="#" style="color:var(--gold);text-decoration:none">Terms of Service</a>
+                and <a href="#" style="color:var(--gold);text-decoration:none">Privacy Policy</a>
+              </span>
+            </label>
+            <div class="field-msg" id="regTermsMsg"></div>
+          </div>
+
+          <button class="submit-btn" id="regSubmitBtn" onclick="submitRegister()">
+            <span class="btn-text">Create Account</span>
+            <span class="btn-spinner"><span class="spinner"></span></span>
+          </button>
+
+          <!-- success overlay -->
+          <div class="form-success" id="registerSuccess">
+            <div class="success-icon">✓</div>
+            <h3>Account Created!</h3>
+            <p>Welcome to Aurelia Jewels. Redirecting...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- trust badges -->
+      <div class="trust-row">
+        <div class="trust-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          SSL Secure
+        </div>
+        <div class="trust-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Verified Store
+        </div>
+        <div class="trust-badge">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d4af37" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/>
+          </svg>
+          24/7 Support
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── TAB SWITCHER ─── */
+function switchTab(tab) {
+  document.getElementById('tabLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('tabRegister').classList.toggle('active', tab === 'register');
+  document.getElementById('panelLogin').classList.toggle('active', tab === 'login');
+  document.getElementById('panelRegister').classList.toggle('active', tab === 'register');
+}
+
+/* ─── HELPERS ─── */
+function setField(inputId, statusId, msgId, ok, msg) {
+  const inp = document.getElementById(inputId);
+  const sta = document.getElementById(statusId);
+  const msgEl = document.getElementById(msgId);
+  if (inp) {
+    inp.classList.toggle('input-error', !ok && msg !== '');
+    inp.classList.toggle('input-ok', ok);
+  }
+  if (sta) {
+    sta.textContent = ok ? '✓' : (msg ? '✗' : '');
+    sta.style.color = ok ? 'var(--success)' : 'var(--error)';
+    sta.classList.toggle('show', msg !== '' || ok);
+  }
+  if (msgEl) {
+    msgEl.textContent = msg;
+    msgEl.className = 'field-msg' + (msg ? ' show ' + (ok ? 'ok' : 'err') : '');
+  }
+  return ok;
+}
+
+function isValidEmail(e) { return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e); }
+
+/* ─── LOGIN VALIDATORS ─── */
+function validateLoginEmail() {
+  const v = document.getElementById('loginEmail').value.trim();
+  if (!v) return setField('loginEmail','loginEmailStatus','loginEmailMsg', false, '');
+  if (!isValidEmail(v)) return setField('loginEmail','loginEmailStatus','loginEmailMsg', false, 'Please enter a valid email address.');
+  return setField('loginEmail','loginEmailStatus','loginEmailMsg', true, 'Looks good!');
+}
+
+function validateLoginPassword() {
+  const v = document.getElementById('loginPassword').value;
+  if (!v) return setField('loginPassword',null,'loginPasswordMsg', false, '');
+  if (v.length < 6) return setField('loginPassword',null,'loginPasswordMsg', false, 'Password must be at least 6 characters.');
+  return setField('loginPassword',null,'loginPasswordMsg', true, '');
+}
+
+function submitLogin() {
+  const eOk = validateLoginEmail();
+  const pOk = validateLoginPassword();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  if (!email) { setField('loginEmail','loginEmailStatus','loginEmailMsg', false, 'Email is required.'); }
+  if (!pass)  { setField('loginPassword',null,'loginPasswordMsg', false, 'Password is required.'); }
+  if (!eOk || !pOk || !email || !pass) { showToast('Please fix the errors above.'); return; }
+
+  const btn = document.getElementById('loginSubmitBtn');
+  btn.classList.add('loading'); btn.disabled = true;
+  setTimeout(() => {
+    btn.classList.remove('loading'); btn.disabled = false;
+    document.getElementById('loginSuccess').classList.add('show');
+    setTimeout(() => window.location.href = 'accessory.html', 2200);
+  }, 1800);
+}
+
+/* ─── REGISTER VALIDATORS ─── */
+function validateRegName() {
+  const v = document.getElementById('regName').value.trim();
+  if (!v) return setField('regName','regNameStatus','regNameMsg', false, '');
+  if (v.length < 2) return setField('regName','regNameStatus','regNameMsg', false, 'Name must be at least 2 characters.');
+  if (!/^[a-zA-Z\s]+$/.test(v)) return setField('regName','regNameStatus','regNameMsg', false, 'Name should contain only letters.');
+  return setField('regName','regNameStatus','regNameMsg', true, 'Great name!');
+}
+
+function validateRegEmail() {
+  const v = document.getElementById('regEmail').value.trim();
+  if (!v) return setField('regEmail','regEmailStatus','regEmailMsg', false, '');
+  if (!isValidEmail(v)) return setField('regEmail','regEmailStatus','regEmailMsg', false, 'Please enter a valid email.');
+  return setField('regEmail','regEmailStatus','regEmailMsg', true, 'Looks good!');
+}
+
+function validateRegPhone() {
+  const v = document.getElementById('regPhone').value.trim().replace(/\s+/g,'');
+  if (!v) return setField('regPhone','regPhoneStatus','regPhoneMsg', false, '');
+  if (!/^[\+]?[\d]{10,13}$/.test(v)) return setField('regPhone','regPhoneStatus','regPhoneMsg', false, 'Enter a valid 10-digit phone number.');
+  return setField('regPhone','regPhoneStatus','regPhoneMsg', true, 'Valid number!');
+}
+
+function validateRegPassword() {
+  const v = document.getElementById('regPassword').value;
+  const bars = ['sb1','sb2','sb3','sb4'];
+  const colors = { 1:'#e05252', 2:'#e8962e', 3:'#d4af37', 4:'#4caf82' };
+  const labels = { 0:'', 1:'Weak', 2:'Fair', 3:'Good', 4:'Strong' };
+
+  let score = 0;
+  if (v.length >= 8)  score++;
+  if (/[A-Z]/.test(v)) score++;
+  if (/[0-9]/.test(v)) score++;
+  if (/[^A-Za-z0-9]/.test(v)) score++;
+
+  bars.forEach((id, i) => {
+    document.getElementById(id).style.background = i < score ? colors[score] : 'rgba(255,255,255,0.08)';
+  });
+  const lbl = document.getElementById('strengthLabel');
+  lbl.textContent = labels[score];
+  lbl.style.color = score > 0 ? colors[score] : 'var(--muted)';
+
+  if (!v) return setField('regPassword',null,'regPasswordMsg', false, '');
+  if (v.length < 8) return setField('regPassword',null,'regPasswordMsg', false, 'Password must be at least 8 characters.');
+  if (score < 2) return setField('regPassword',null,'regPasswordMsg', false, 'Add uppercase letters or numbers for a stronger password.');
+  return setField('regPassword',null,'regPasswordMsg', true, '');
+}
+
+function validateRegConfirm() {
+  const v = document.getElementById('regConfirm').value;
+  const p = document.getElementById('regPassword').value;
+  if (!v) return setField('regConfirm','regConfirmStatus','regConfirmMsg', false, '');
+  if (v !== p) return setField('regConfirm','regConfirmStatus','regConfirmMsg', false, 'Passwords do not match.');
+  return setField('regConfirm','regConfirmStatus','regConfirmMsg', true, 'Passwords match!');
+}
+
+function validateTerms() {
+  const checked = document.getElementById('regTerms').checked;
+  const msg = document.getElementById('regTermsMsg');
+  msg.textContent = checked ? '' : 'You must accept the terms to continue.';
+  msg.className = 'field-msg' + (checked ? '' : ' show err');
+  return checked;
+}
+
+function submitRegister() {
+  const nOk = validateRegName();
+  const eOk = validateRegEmail();
+  const phOk = validateRegPhone();
+  const pOk = validateRegPassword();
+  const cOk = validateRegConfirm();
+  const tOk = validateTerms();
+
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const phone = document.getElementById('regPhone').value.trim();
+  const pass  = document.getElementById('regPassword').value;
+  const conf  = document.getElementById('regConfirm').value;
+
+  if (!name)  setField('regName','regNameStatus','regNameMsg', false, 'Full name is required.');
+  if (!email) setField('regEmail','regEmailStatus','regEmailMsg', false, 'Email is required.');
+  if (!phone) setField('regPhone','regPhoneStatus','regPhoneMsg', false, 'Phone number is required.');
+  if (!pass)  setField('regPassword',null,'regPasswordMsg', false, 'Password is required.');
+  if (!conf)  setField('regConfirm','regConfirmStatus','regConfirmMsg', false, 'Please confirm your password.');
+
+  if (!nOk || !eOk || !phOk || !pOk || !cOk || !tOk || !name || !email || !phone || !pass || !conf) {
+    showToast('Please fix the errors above.');
+    return;
+  }
+
+  const btn = document.getElementById('regSubmitBtn');
+  btn.classList.add('loading'); btn.disabled = true;
+  setTimeout(() => {
+    btn.classList.remove('loading'); btn.disabled = false;
+    document.getElementById('registerSuccess').classList.add('show');
+    setTimeout(() => window.location.href = 'accessory.html', 2200);
+  }, 1800);
+}
+
+/* ─── EYE TOGGLE ─── */
+function toggleEye(inputId, iconId) {
+  const inp = document.getElementById(inputId);
+  const ico = document.getElementById(iconId);
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    ico.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  } else {
+    inp.type = 'password';
+    ico.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+  }
+}
+
+/* ─── ENTER KEY ─── */
+document.addEventListener('keydown', function(e) {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('panelLogin').classList.contains('active')) submitLogin();
+  else submitRegister();
+});
+
+/* ─── TOAST ─── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3200);
+}
+</script>
+</body>
+</html>
